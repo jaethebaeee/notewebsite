@@ -3,6 +3,7 @@ class NotesApp {
         this.notes = [];
         this.currentNoteId = null;
         this.isEditing = false;
+        this.lastSelectionRange = null;
         
         this.initializeElements();
         this.bindEvents();
@@ -35,13 +36,15 @@ class NotesApp {
         // Button events
         this.newNoteBtn.addEventListener('click', () => this.createNewNote());
         this.welcomeNewNoteBtn.addEventListener('click', () => this.createNewNote());
-        this.saveBtn.addEventListener('click', () => this.saveCurrentNote());
+        this.saveBtn.addEventListener('click', () => this.saveCurrentNote(false));
         this.publishBtn.addEventListener('click', () => this.publishCurrentNote());
         this.deleteBtn.addEventListener('click', () => this.deleteCurrentNote());
         
         // Editor events
         this.noteTitle.addEventListener('input', () => this.updateCurrentNoteTitle());
         this.noteContent.addEventListener('input', () => this.handleContentChange());
+        this.noteContent.addEventListener('mouseup', () => this.captureSelection());
+        this.noteContent.addEventListener('keyup', () => this.captureSelection());
         
         // Toolbar events
         this.toolbarBtns.forEach(btn => {
@@ -58,7 +61,7 @@ class NotesApp {
             this.showSavingIndicator();
             autoSaveTimeout = setTimeout(() => {
                 if (this.currentNoteId) {
-                    this.saveCurrentNote(false); // Silent save
+                    this.saveCurrentNote(true); // Auto-save silently
                     this.hideSavingIndicator();
                 }
             }, 2000);
@@ -215,6 +218,11 @@ class NotesApp {
     }
 
     applyFormat(format) {
+        if (this.lastSelectionRange) {
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(this.lastSelectionRange);
+        }
         // Modern approach using selection API
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
@@ -302,7 +310,7 @@ class NotesApp {
         // Cmd/Ctrl + S to save
         if ((e.metaKey || e.ctrlKey) && e.key === 's') {
             e.preventDefault();
-            this.saveCurrentNote();
+            this.saveCurrentNote(false);
         }
         
         // Cmd/Ctrl + N for new note
@@ -479,6 +487,21 @@ class NotesApp {
         div.innerHTML = content;
         const text = div.textContent || div.innerText || '';
         return text.substring(0, 100) + (text.length > 100 ? '...' : '');
+    }
+
+    captureSelection() {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            this.lastSelectionRange = null;
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        // Only store ranges that are within the editor content
+        if (this.noteContent.contains(range.startContainer) && this.noteContent.contains(range.endContainer)) {
+            this.lastSelectionRange = range.cloneRange();
+        } else {
+            this.lastSelectionRange = null;
+        }
     }
 }
 

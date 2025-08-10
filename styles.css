@@ -354,7 +354,7 @@ body {
     padding: 0;
     margin: 0;
     resize: none;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .content-field:empty:before {
